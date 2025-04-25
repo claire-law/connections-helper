@@ -1,1 +1,1 @@
-# connections-helper
+# Assistant for NYT Connections
