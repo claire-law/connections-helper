@@ -1,0 +1,6 @@
+numpy>=1.20.0
+scikit-learn>=0.24.0
+matplotlib>=3.4.0
+gensim==4.3.1           # required for word2vec or conceptnet
+transformers>=4.0.0     # required for bert
+torch>=1.7.0            # required for bert
