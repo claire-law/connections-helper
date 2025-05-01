@@ -7,8 +7,6 @@ from collections import Counter
 from sklearn.metrics.pairwise import cosine_similarity
 # project imports
 from models.embeddings import EmbeddingModel, ModelType
-from models.clustering import WordClusterer, ClustererType
-
 
 ClustererType = Type['WordClusterer']
 

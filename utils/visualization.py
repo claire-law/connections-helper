@@ -9,7 +9,6 @@ from models.embeddings import EmbeddingModel, ModelType
 from models.clustering import WordClusterer, ClustererType
 from game.state import GameState, GameStateType
 from game.recommendation import RecommendationEngine, RecommendationType
-from utils.visualization import GameVisualizer, VisualizerType
 
 
 VisualizerType = Type['GameVisualizer']
@@ -81,7 +80,7 @@ class GameVisualizer:
         
         
     def visualize_group_similarities(
-            self: GameVisualizer, 
+            self: VisualizerType, 
             groups # List of (words, score) tuples representing potential groups
     ):
         """

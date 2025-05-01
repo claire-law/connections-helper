@@ -2,9 +2,9 @@
 import numpy as np
 from typing import Type, Tuple
 from collections.abc import Mapping, Sequence, Set
+import pickle
+import os
 # project imports
-from models.embeddings import EmbeddingModel, ModelType
-
 
 ModelType = Type['EmbeddingModel']
 
@@ -20,34 +20,63 @@ class EmbeddingModel:
     def __init__(
             self: ModelType, 
             model_type: str = "conceptnet", #  type of embedding model to use: "conceptnet", "word2vec", "bert"
-            embedding_dim: int = 300 # Dimensionality of the word vectors
+            embedding_dim: int = 300, # Dimensionality of the word vectors
+            models_dir: str = 'models/saved_embeddings'
     ):
         self.model_type: str = model_type
         self.embedding_dim: int = embedding_dim
+        self.models_dir: str = models_dir
+        os.makedirs(self.models_dir, exist_ok=True)
+        
         self.model = self._load_model(model_type)
+
         self.cache = {}  # Cache for previously computed embeddings
         
     def _load_model(
             self: ModelType,
             model_type: str # which embedding model to load: word2vec, conceptnet, bert
     ): # returns loaded embedding model object for the specified model
+        
+        model_path = os.path.join(self.models_dir, f"{model_type}.pkl")
+        
+        # Check if model file exists locally
+        if os.path.exists(model_path):
+            print(f"Loading {model_type} embeddings from local storage...")
+            try:
+                with open(model_path, 'rb') as f:
+                    return pickle.load(f)
+            except Exception as e:
+                print(f"No local model: {e}")
+                print("Will download the model instead...")
 
         if model_type == "conceptnet":
             print(f"Loading ConceptNet embeddings...")
             import gensim.downloader as api # gensim is a popular nlp library
-            return api.load("conceptnet-numberbatch-17-06-300")
+            model = api.load("conceptnet-numberbatch-17-06-300")
+            print(f"Saving ConceptNet embeddings to {model_path}...")
+            with open(model_path, 'wb') as f:
+                pickle.dump(model, f)
+            return 
+        
         
         elif model_type == "word2vec":
             print(f"Loading Word2Vec embeddings...")
             from gensim.models import KeyedVectors
-            return KeyedVectors.load_word2vec_format("path/to/embeddings")
+            model = KeyedVectors.load_word2vec_format("path/to/embeddings")
+            print(f"Saving Word2Vec embeddings to {model_path}...")
+            with open(model_path, 'wb') as f:
+                pickle.dump(model, f)
+            return 
                     
         elif model_type == "bert":
             print(f"Loading BERT embeddings...")
             from transformers import BertModel, BertTokenizer
-            return {'model': BertModel.from_pretrained('bert-base-uncased'),
+            model= {'model': BertModel.from_pretrained('bert-base-uncased'),
                     'tokenizer': BertTokenizer.from_pretrained('bert-base-uncased')}
-            
+            print(f"Saving BERT model to {model_path}...")
+            with open(model_path, 'wb') as f:
+                pickle.dump(model, f)
+            return model
         else:
             raise ValueError(f"Unsupported embedding model type: {model_type}")
         
