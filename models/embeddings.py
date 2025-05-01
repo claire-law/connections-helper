@@ -37,49 +37,44 @@ class EmbeddingModel:
             model_type: str # which embedding model to load: word2vec, conceptnet, bert
     ): # returns loaded embedding model object for the specified model
         
-        model_path = os.path.join(self.models_dir, f"{model_type}.pkl")
+        model_path = os.path.join(self.models_dir, f"{model_type}.kv")
         
         # Check if model file exists locally
         if os.path.exists(model_path):
-            print(f"Loading {model_type} embeddings from local storage...")
-            try:
-                with open(model_path, 'rb') as f:
-                    return pickle.load(f)
-            except Exception as e:
-                print(f"No local model: {e}")
-                print("Will download the model instead...")
-
-        if model_type == "conceptnet":
-            print(f"Loading ConceptNet embeddings...")
-            import gensim.downloader as api # gensim is a popular nlp library
-            model = api.load("conceptnet-numberbatch-17-06-300")
-            print(f"Saving ConceptNet embeddings to {model_path}...")
-            with open(model_path, 'wb') as f:
-                pickle.dump(model, f)
-            return 
-        
-        
-        elif model_type == "word2vec":
-            print(f"Loading Word2Vec embeddings...")
+            print(f"Loading {model_type} embeddings from {model_path}...")
             from gensim.models import KeyedVectors
-            model = KeyedVectors.load_word2vec_format("path/to/embeddings")
-            print(f"Saving Word2Vec embeddings to {model_path}...")
-            with open(model_path, 'wb') as f:
-                pickle.dump(model, f)
-            return 
-                    
-        elif model_type == "bert":
-            print(f"Loading BERT embeddings...")
-            from transformers import BertModel, BertTokenizer
-            model= {'model': BertModel.from_pretrained('bert-base-uncased'),
-                    'tokenizer': BertTokenizer.from_pretrained('bert-base-uncased')}
-            print(f"Saving BERT model to {model_path}...")
-            with open(model_path, 'wb') as f:
-                pickle.dump(model, f)
-            return model
+            return KeyedVectors.load(model_path)
         else:
-            raise ValueError(f"Unsupported embedding model type: {model_type}")
-        
+            print('No local model. Downloading embedding model...')
+            if model_type == "conceptnet":
+                print(f"Loading ConceptNet embeddings...")
+                import gensim.downloader as api # gensim is a popular nlp library
+                model = api.load("conceptnet-numberbatch-17-06-300")
+                print(f"Saving ConceptNet embeddings to {model_path}...")
+                model.save(model_path)
+                return model
+            
+            elif model_type == "word2vec":
+                print(f"Loading Word2Vec embeddings...")
+                import gensim.downloader as api 
+                model = api.load('word2vec-google-news-300')
+                print(f"Saving Word2Vec embeddings to {model_path}...")
+                model.save(model_path) 
+                return model
+                        
+            # elif model_type == "bert":
+            #     print(f"Loading BERT embeddings...")
+            #     from transformers import BertModel, BertTokenizer
+            #     from transformers import AutoTokenizer, AutoModel
+            #     model = AutoModel.from_pretrained("bert-base-uncased")
+            #     # model= {'model': BertModel.from_pretrained('bert-base-uncased'),
+            #             # 'tokenizer': BertTokenizer.from_pretrained('bert-base-uncased')}
+            #     print(f"Saving BERT model to {model_path}...")
+            #     model.save_pretrained("models/saved_embeddings/bert-base-uncased")  # HuggingFace
+            #     return model
+            else:
+                raise ValueError(f"Unsupported embedding model type: {model_type}")
+            
 
 
     def get_embedding(
