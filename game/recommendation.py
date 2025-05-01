@@ -117,14 +117,14 @@ class RecommendationEngine:
             game_state: GameStateType # current GameState instance
     ) -> str: # returns human-readable explanation for a recommendation
         # Basic confidence level based on score
-        if score > 0.8:
-            confidence = "Very high confidence"
-        elif score > 0.6:
+        if score > 0.6:
             confidence = "High confidence"
-        elif score > 0.4:
+        elif score > 0.3:
             confidence = "Medium confidence"
-        else:
+        elif score > 0.1:
             confidence = "Low confidence"
+        else:
+            confidence = "Very low confidence"
             
         # Check if derived from one-away guess
         for one_away in game_state.one_away_guesses:

@@ -112,27 +112,37 @@ class WordClusterer:
         # Create a copy of the original clusters to modify
         balanced_clusters = {label: list(words) for label, words in clusters.items()}
         
+        # Create a mapping from word to current label in balanced_clusters
+        word_to_label = {}
+        for label, words in balanced_clusters.items():
+            for word in words:
+                word_to_label[word] = label
+        
+
         # Balance clusters by moving words from excess to deficit clusters
         while deficit_clusters and excess_clusters:
             deficit = deficit_clusters[0]
             excess = excess_clusters[0]
             
             # Find word in excess cluster that's closest to deficit cluster center
-            excess_indices = [i for i, label in enumerate(labels) if label == excess]
+            # excess_indices = [i for i, label in enumerate(labels) if label == excess]
+            excess_words = balanced_clusters[excess] 
             deficit_center = centers[deficit]
             
             # Compute distances to deficit center
             distances = []
-            for i in excess_indices:
-                dist = np.linalg.norm(embeddings[i] - deficit_center)
-                distances.append((i, dist))
+            for word in excess_words:
+                word_idx = words_list.index(word)
+                dist = np.linalg.norm(embeddings[word_idx] - deficit_center)
+                distances.append((word, dist))
             
             # Sort by distance (ascending)
             distances.sort(key=lambda x: x[1])
             
             # Move the closest word
-            closest_idx, _ = distances[0]
-            word_to_move = words_list[closest_idx]
+            word_to_move, _ = distances[0]
+            # closest_idx, _ = distances[0]
+            # word_to_move = words_list[closest_idx]
             
             # Update balanced clusters
             balanced_clusters[excess].remove(word_to_move)
