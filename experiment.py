@@ -16,54 +16,56 @@ from game.recommendation import RecommendationEngine
 
 
 def load_dataset():
-    """Load the NYT Connections dataset from local file or download it."""
     data_dir = "data"
     data_file = os.path.join(data_dir, "huggingface.json")
-    
-    # Create data directory if it doesn't exist
     os.makedirs(data_dir, exist_ok=True)
-    
-    # Check if file exists
+
     if os.path.exists(data_file):
         print(f"Loading dataset from {data_file}")
         df = pd.read_json(data_file)
     else:
         print(f"Downloading dataset from Huggingface")
         try:
-            # Try to download from Huggingface
             # This requires user to be logged in via `huggingface-cli login`
             df = pd.read_json("hf://datasets/tm21cy/NYT-Connections/ConnectionsFinalDataset.json")
-            # Save locally for future use
-            df.to_json(data_file)
+            df.to_json(data_file)             # Save locally for future use
             print(f"Dataset saved to {data_file}")
         except Exception as e:
             print(f"Error downloading dataset: {e}")
             print("Please log in using `huggingface-cli login` and try again.")
             return None
-    
     return df
 
-
 def preprocess_games(df):
-    """Extract necessary information from the dataset."""
     games = []
     
     for _, row in df.iterrows():
         game_data = {
             'date': row.get('date', 'Unknown'),
-            'words': [],
+            'words': row.get('words', []),
             'groups': {}
         }
         
-        # Extract words and groups
-        for group in row.get('board', []):
-            color = group.get('color', 'Unknown')
-            group_words = group.get('words', [])
-            game_data['words'].extend(group_words)
-            game_data['groups'][color] = group_words
+        # Extract groups from the 'answers' list of dictionaries
+        if isinstance(row.get('answers'), list):
+            for i, answer_dict in enumerate(row.get('answers')):
+                # Use the index as color if no color is provided
+                color = answer_dict.get('color', f"group_{i}")
+                words = answer_dict.get('words', [])
+                
+                # NYT Connections has specific colors for each difficulty level
+                # We can map group indices to standard colors
+                nyt_colors = ['yellow', 'green', 'blue', 'purple']
+                if i < len(nyt_colors) and 'color' not in answer_dict:
+                    color = nyt_colors[i]
+                    
+                game_data['groups'][color] = words
         
-        games.append(game_data)
-    
+        # Only add games with valid data
+        if game_data['words'] and game_data['groups']:
+            games.append(game_data)
+
+    print(game_data['words'][:5])
     return games
 
 
