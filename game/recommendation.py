@@ -138,7 +138,7 @@ class RecommendationEngine:
         # Check if derived from one-away guess
         for one_away in game_state.one_away_guesses:
             if len(set(words).intersection(one_away)) >= 3:
-                return f"{confidence} - Based on previous 'one word away' guess"
+                return f"Based on previous 'one word away' guess"
                 
         # Default explanation
-        return f"{confidence} - Based on semantic similarity"
+        return ""

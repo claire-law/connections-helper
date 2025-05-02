@@ -157,9 +157,27 @@ class GameController:
             return
             
         print("\n=== RECOMMENDED GROUPS ===")
+
+        max_word_length = 0
+        for words, _, _ in recommendations:
+            # Update max_word_length if we find a longer word
+            current_max = max(len(word) for word in words)
+            if current_max > max_word_length:
+                max_word_length = current_max
+
         for words, score, explanation in recommendations:
+            padding = 2  # Add 2 spaces on each side
+            total_width = max_word_length + (padding * 2)
+            
+            # Format each word with consistent spacing
+            formatted_words = []
+            for word in words:
+                # Center the word in its space with padding on both sides
+                formatted_word = word.center(total_width)
+                formatted_words.append(formatted_word)
+
             score_pct = int(score * 100)
-            print(f"* {', '.join(words)}        Confidence: {score_pct}%")
+            print(f"* [{'|'.join(formatted_words)}]        Confidence: {score_pct}%")
             
     def run(self: GameControllerType):
         """Run the main game loop."""
@@ -210,4 +228,4 @@ class GameController:
                 else:
                     print("Invalid choice, please try again.")
                     
-        print("Thanks for using Connections Helper.")
+        print("Thanks for using Connections Helper!\n - Alicia and Claire")
