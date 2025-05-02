@@ -3,4 +3,4 @@ scikit-learn>=0.24.0
 matplotlib>=3.4.0
 gensim         # required for word2vec or conceptnet
 pandas
-kagglehub
+tqdm
