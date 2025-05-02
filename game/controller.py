@@ -102,8 +102,8 @@ class GameController:
                 
                 # Show progress
                 progress = self.game_state.get_progress()
-                print(f"\nGreat! {progress['groups_found']}/4 groups found, "
-                      f"{progress['words_remaining']} words remaining.")
+                print(f"\nGreat! {progress['groups_found']} groups found, "
+                      f"{4-progress['groups_found']} words remaining.")
                 
             else:
                 # Check if one away
@@ -125,7 +125,8 @@ class GameController:
             
             # Check if game is complete
             if self.game_state.is_complete():
-                print("\nCongratulations! You've outsmarted the New York Times!")
+                print("\n=== Congratulations! === ")
+                print("You've outsmarted the New York Times!")
                 for color, words in self.game_state.grouped.items():
                     print(f"{color}: {', '.join(words)}")
                 return False
@@ -156,10 +157,9 @@ class GameController:
             return
             
         print("\n=== RECOMMENDED GROUPS ===")
-        for i, (words, score, explanation) in enumerate(recommendations, 1):
+        for words, score, explanation in recommendations:
             score_pct = int(score * 100)
-            print(f"{i}. {', '.join(words)}")
-            print(f"   Score: {score_pct}% - {explanation}\n")
+            print(f"* {', '.join(words)}        Confidence: {score_pct}%")
             
     def run(self: GameControllerType):
         """Run the main game loop."""

@@ -44,15 +44,21 @@ class RecommendationEngine:
         one_away_candidates = self._process_one_away_guesses(game_state)
         
         # Combine all candidates
-        all_candidates = adjusted_clusters + one_away_candidates
+        #all_candidates = adjusted_clusters + one_away_candidates
         
+        # Filter all candidates to only include ungrouped words
+        filtered_candidates = []
+        for words, score in adjusted_clusters + one_away_candidates:
+            # Check if all words are still ungrouped
+            if all(word in game_state.ungrouped for word in words):
+                filtered_candidates.append((words, score))
+
         # Sort by score and get top N
-        sorted_candidates = sorted(all_candidates, key=lambda x: x[1], reverse=True)
-        top_candidates = sorted_candidates[:top_n]
+        sorted_candidates = sorted(filtered_candidates, key=lambda x: x[1], reverse=True)
         
         # Add explanations
         results = []
-        for words, score in top_candidates:
+        for words, score in sorted_candidates:
             explanation = self._generate_explanation(words, score, game_state)
             results.append((words, score, explanation))
             
@@ -94,6 +100,9 @@ class RecommendationEngine:
                     # Create candidate group
                     candidate_group = remaining_words + [candidate]
                     
+                    if not all(word in game_state.ungrouped for word in candidate_group):
+                        continue
+
                     # Score this group
                     score = self.clusterer.calculate_cohesion(candidate_group)
                     
