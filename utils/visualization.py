@@ -83,9 +83,6 @@ class GameVisualizer:
             self: VisualizerType, 
             groups # List of (words, score) tuples representing potential groups
     ):
-        """
-        Visualize similarity between potential groups.
-        """
         if len(groups) < 2:
             print("Need at least 2 groups to visualize similarities")
             return

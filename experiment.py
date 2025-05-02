@@ -46,26 +46,22 @@ def preprocess_games(df):
             'groups': {}
         }
         
-        # Extract groups from the 'answers' list of dictionaries
+        # extract groups from the 'answers' list of dictionaries
         if isinstance(row.get('answers'), list):
             for i, answer_dict in enumerate(row.get('answers')):
                 # Use the index as color if no color is provided
                 color = answer_dict.get('color', f"group_{i}")
                 words = answer_dict.get('words', [])
                 
-                # NYT Connections has specific colors for each difficulty level
-                # We can map group indices to standard colors
                 nyt_colors = ['yellow', 'green', 'blue', 'purple']
                 if i < len(nyt_colors) and 'color' not in answer_dict:
                     color = nyt_colors[i]
                     
                 game_data['groups'][color] = words
         
-        # Only add games with valid data
         if game_data['words'] and game_data['groups']:
             games.append(game_data)
 
-    print(game_data['words'][:5])
     return games
 
 
@@ -74,29 +70,23 @@ def play_game(game_data, embedding_type):
     Simulate playing a game with the given embedding model.
     Returns results including whether game was won and color-specific statistics.
     """
-    # Initialize models
+    # initialize models and game state
     embedding_model = EmbeddingModel(model_type=embedding_type)
     clusterer = WordClusterer(embedding_model)
     recommendation_engine = RecommendationEngine(clusterer)
-    
-    # Initialize game state
     game_state = GameState(game_data['words'])
     
-    # Track which colors were guessed correctly
     color_results = {color: False for color in game_data['groups'].keys()}
     
     # Play until game is complete or 4 mistakes are made
     while not game_state.is_complete() and game_state.num_mistakes < 4:
-        # Get recommendations
         recommendations = recommendation_engine.get_recommendations(game_state)
         
         if not recommendations:
             break  # No more recommendations available
         
-        # Get top recommendation
         top_words, _, _ = recommendations[0]
         
-        # Check if this guess matches any group
         correct = False
         matching_color = None
         
@@ -108,11 +98,9 @@ def play_game(game_data, embedding_type):
                 color_results[color] = True
                 break
         
-        # Process guess
         if correct:
             game_state.make_guess(top_words, True, matching_color)
         else:
-            # Check if it's "one away"
             one_away = False
             for color, group_words in game_data['groups'].items():
                 if len(set(top_words).intersection(set(group_words))) == 3:
@@ -122,7 +110,6 @@ def play_game(game_data, embedding_type):
             game_state.make_guess(top_words, False, one_away=one_away)
             clusterer.handle_wrong_guess(top_words, one_away)
     
-    # Game is won if all words are grouped before 4 mistakes
     won = game_state.is_complete()
     
     return {
@@ -132,17 +119,12 @@ def play_game(game_data, embedding_type):
     }
 
 
-def run_experiments(games, sample_size=None, show_progress=True):
+def run_experiments(games, # list of game data
+                    sample_size=None,  #Number of games to sample (None for all)
+                    show_progress=True): #show progress bar or not
     """
-    Run experiments on both ConceptNet and Word2Vec models.
-    
-    Args:
-        games: List of game data
-        sample_size: Number of games to sample (None for all)
-        show_progress: Whether to show progress bar
-    
-    Returns:
-        Dictionary with experiment results
+    Run experiments on both ConceptNet and Word2Vec models, then
+    return dictionary with experiment results.
     """
     # Sample games if requested
     if sample_size is not None and sample_size < len(games):
@@ -158,13 +140,15 @@ def run_experiments(games, sample_size=None, show_progress=True):
             'wins': 0,
             'games_played': 0,
             'color_wins': defaultdict(int),
-            'color_total': defaultdict(int)
+            'color_total': defaultdict(int),
+            'game_outcomes': []
         },
         'word2vec': {
             'wins': 0,
             'games_played': 0,
             'color_wins': defaultdict(int),
-            'color_total': defaultdict(int)
+            'color_total': defaultdict(int),
+            'game_outcomes': []
         }
     }
     
@@ -186,6 +170,8 @@ def run_experiments(games, sample_size=None, show_progress=True):
             if game_result['won']:
                 results[model_type]['wins'] += 1
             
+            results[model_type]['game_outcomes'].append(game_result)
+            
             # Update color-specific stats
             for color, was_correct in game_result['color_results'].items():
                 results[model_type]['color_total'][color] += 1
@@ -196,8 +182,6 @@ def run_experiments(games, sample_size=None, show_progress=True):
 
 
 def visualize_results(results):
-    """Create visualizations for experiment results."""
-    # Create directory for visualizations
     os.makedirs("results", exist_ok=True)
     
     # 1. Overall win rates
@@ -209,7 +193,7 @@ def visualize_results(results):
     plt.figure(figsize=(10, 6))
     bars = plt.bar(win_rates.keys(), win_rates.values())
     
-    # Add percentage labels on top of bars
+    # percentage labels on top of bars
     for bar in bars:
         height = bar.get_height()
         plt.text(
@@ -243,7 +227,6 @@ def visualize_results(results):
     color_order = ['yellow', 'green', 'blue', 'purple']
     sorted_colors = sorted(all_colors, key=lambda c: color_order.index(c) if c in color_order else 999)
     
-    # Create bars for each model
     for i, model in enumerate(models):
         color_rates = []
         for color in sorted_colors:
@@ -256,7 +239,6 @@ def visualize_results(results):
         offset = width * (i - 0.5)
         bars = plt.bar(x + offset, color_rates, width, label=model)
         
-        # Add percentage labels
         for j, bar in enumerate(bars):
             height = bar.get_height()
             plt.text(
@@ -337,17 +319,14 @@ def main():
     games = preprocess_games(df)
     print(f"Preprocessed {len(games)} games.")
     
-    # Run experiments with a sample of games for faster testing
-    # Set sample_size to None to use all games
-    sample_size = 20  # Adjust based on how many games you want to test
-    
+    sample_size = 50     # Set sample_size to None to use all games
     print(f"Running experiments on {sample_size if sample_size else 'all'} games...")
     results = run_experiments(games, sample_size=sample_size)
     
     print("Visualizing results...")
     visualize_results(results)
     
-    print("Experiments completed. Results saved to 'results' directory.")
+    print("Experiments completed. Visuals saved to 'results' directory.")
 
 
 if __name__ == "__main__":
